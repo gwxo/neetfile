@@ -2,7 +2,7 @@
   "name": "Dr.PRASHANT",
   "short_name": "Dr. Prashant",
   "description": "Ultimate NEET 2027 AI Powered Pomodoro Ecosystem",
-  "start_url": "./index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#90D5FF",
   "theme_color": "#90D5FF",
