@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+    <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#90D5FF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dr.Prashant">
+  <link rel="apple-touch-icon" href="icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DOCTOR PRASHANT | NEET 2027 AI ECOSYSTEM</title>
@@ -559,23 +565,21 @@
             setInterval(countdown, 1000);
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
 
-            // --- ADD THIS INSIDE window.onload ---
-
-// 1. Register Service Worker for Offline & PWA
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log("PWA: Service Worker Registered"))
-    .catch(err => console.log("PWA: Service Worker Failed", err));
-}
-
-// 2. Link the manifest dynamically (if not already in head)
-if (!document.querySelector('link[rel="manifest"]')) {
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = './manifest.json';
-    document.head.appendChild(link);
-}
+        
         };
     </script>
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then((registration) => {
+            console.log('PWA ServiceWorker registered successfully!');
+          })
+          .catch((error) => {
+            console.log('ServiceWorker registration failed:', error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
