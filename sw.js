@@ -1,24 +1,57 @@
-const CACHE_NAME = 'dr-prashant-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+
+const CACHE_NAME = 'dr.prashant'; // Bumped version to force update
+
+// Update these paths to point specifically to your movie folder assets
+const CORE_ASSETS = [
+  '/',              // The movie app entry point
+  'index.html',    // Explicitly cache the movie's HTML file
+  'manifest.json',       // (Make sure this path is correct, e.g., '/movie/manifest.json' if it's inside the folder)
+  'icon.png',        // (Same here, update if inside /movie/)
+  'icon.png'         // (Same here, update if inside /movie/)
 ];
 
-// Install Service Worker
+// Install: Save core files to the device
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+      console.log('Caching offline assets...');
+      return cache.addAll(CORE_ASSETS);
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Cache and Return Requests
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+// Activate: Clean up any old versions of the cache
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('Deleting old cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
+});
+
+// Fetch: How the app handles internet requests
+self.addEventListener('fetch', (event) => {
+  // If the user is trying to load a webpage (HTML)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // CHANGED: Serve the movie folder offline instead of the root '/'
+        return caches.match('/') || caches.match('index.html');
+      })
+    );
+  } else {
+    // For all other requests (images, API data, etc.)
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+  }
 });
