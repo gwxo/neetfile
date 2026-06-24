@@ -3,7 +3,7 @@
   "short_name": "Dr. Prashant",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#030303",
+  "background_color": "#90D5FF",
   "theme_color": "#90D5FF",
   "icons": [
     {
