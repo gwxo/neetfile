@@ -1,57 +1,18 @@
-
-const CACHE_NAME = 'dr.prashant'; // Bumped version to force update
-
-// Update these paths to point specifically to your movie folder assets
-const CORE_ASSETS = [
-  '/',              // The movie app entry point
-  'index.html',    // Explicitly cache the movie's HTML file
-  'manifest.json',       // (Make sure this path is correct, e.g., '/movie/manifest.json' if it's inside the folder)
-  'icon.png',        // (Same here, update if inside /movie/)
-  'icon.png'         // (Same here, update if inside /movie/)
+const CACHE_NAME = 'dr-prashant-v1';
+const ASSETS = [
+  '/',
+  '/index.html',
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap'
 ];
 
-// Install: Save core files to the device
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching offline assets...');
-      return cache.addAll(CORE_ASSETS);
-    }).then(() => self.skipWaiting())
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-// Activate: Clean up any old versions of the cache
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Deleting old cache:', cache);
-            return caches.delete(cache);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((res) => res || fetch(e.request))
   );
-});
-
-// Fetch: How the app handles internet requests
-self.addEventListener('fetch', (event) => {
-  // If the user is trying to load a webpage (HTML)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        // CHANGED: Serve the movie folder offline instead of the root '/'
-        return caches.match('/') || caches.match('index.html');
-      })
-    );
-  } else {
-    // For all other requests (images, API data, etc.)
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(event.request);
-      })
-    );
-  }
 });
