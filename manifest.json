@@ -1,17 +1,15 @@
 {
   "name": "NEET FILE",
-  "short_name": "NEET 2027",
-  "description": "NEET 2027 AI Study Ecosystem",
+  "short_name": "Dr. Prashant",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030303",
   "theme_color": "#90D5FF",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "/icon.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
