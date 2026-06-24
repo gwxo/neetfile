@@ -593,6 +593,81 @@ window.addEventListener('offline', () => {
   }
 </script>
     
-<script src="pgsave.js"></script>
+<!-- FIREBASE CORE ENGINE -->
+<script type="module">
+  // Import the functions we need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 1. YOUR FIREBASE CONFIG (Paste from Firebase Console)
+  const firebaseConfig = {
+  apiKey: "AIzaSyDSSUn42qoB7ZcrPeJ9sZIImsx0d-Z6TXc",
+  authDomain: "fixdarbhanga.firebaseapp.com",
+  projectId: "fixdarbhanga",
+  storageBucket: "fixdarbhanga.firebasestorage.app",
+  messagingSenderId: "104519114133",
+  appId: "1:104519114133:web:d03d69d6fdadb3613faa9c"
+};
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const fstore = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // 2. MAKE FUNCTIONS GLOBAL (This fixes the "not clicking" issue)
+  window.loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login Error:", error);
+      alert("Click failed: Check if you enabled Google Auth in Firebase Console");
+    }
+  };
+
+  window.logout = () => {
+    signOut(auth).then(() => {
+      location.reload(); // Refresh to clear data
+    });
+  };
+
+  // 3. LISTEN FOR USER LOGIN
+  onAuthStateChanged(auth, (user) => {
+    const statusText = document.getElementById('auth-status');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    if (user) {
+      // User is signed in
+      statusText.innerText = "Linked Account: " + user.email;
+      statusText.style.color = "var(--primary)";
+      logoutBtn.classList.remove('hidden');
+
+      // SYNC DATA FROM CLOUD
+      onSnapshot(doc(fstore, "users", user.uid), (docSnap) => {
+        if (docSnap.exists()) {
+          window.db = docSnap.data(); // Fill our local db with cloud data
+          if (typeof updateUI === "function") updateUI(); // Refresh the screen
+        } else {
+          // If new user, save their current local data to cloud
+          save(); 
+        }
+      });
+    } else {
+      statusText.innerText = "Sign in to sync your NEET progress across all your devices.";
+      logoutBtn.classList.add('hidden');
+    }
+  });
+
+  // 4. OVERWRITE YOUR OLD SAVE FUNCTION TO USE CLOUD
+  window.save = async () => {
+    if (auth.currentUser) {
+      await setDoc(doc(fstore, "users", auth.currentUser.uid), db);
+    } else {
+      localStorage.setItem('dr_prashant_pro_db', JSON.stringify(db));
+    }
+    if (typeof updateUI === "function") updateUI();
+  };
+</script>
 </body>
 </html>
