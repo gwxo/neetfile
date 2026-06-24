@@ -315,6 +315,18 @@
             <!-- VIEW: SETTINGS -->
             <section id="view-settings" class="page hidden">
                 <div class="card">
+    <span class="card-label">Cloud Synchronization</span>
+    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 15px;">
+        Sign in to sync your NEET progress across all your devices.
+    </p>
+    <div id="auth-controls">
+        <button class="tag-btn" style="background: var(--primary); color: #000; width: 100%;" onclick="loginWithGoogle()">
+            Sign in with Google
+        </button>
+    </div>
+    <button class="tag-btn" style="margin-top: 10px; width: 100%;" onclick="logout()">Sign Out</button>
+</div>
+                <div class="card">
                     <span class="card-label">System Preferences</span>
                     <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                         <button class="tag-btn" onclick="backup.export()">Export Data Backup</button>
@@ -580,5 +592,7 @@ window.addEventListener('offline', () => {
     navigator.serviceWorker.register('sw.js');
   }
 </script>
+    
+
 </body>
 </html>
