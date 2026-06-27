@@ -392,6 +392,9 @@
     <div id="toast">Session Recorded!</div>
 
     <script>
+        const getIndiaDate = () => {
+    return new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Kolkata'});
+};
         // --- DATA ARCHITECTURE ---
         let db = {
             logs: [], // { date, mins, label, timestamp }
@@ -479,10 +482,10 @@
                 this.reset();
                 if(this.label !== 'Short Break') {
                     db.logs.push({
-                        date: new Date().toISOString().split('T')[0],
+                        date: getIndiaDate(), // Changed to India Time
                         mins: this.total / 60,
                         label: this.label,
-                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
                     });
                     showToast("Session Saved: " + this.label);
                     save();
@@ -520,7 +523,7 @@
 
         // --- UI REFRESH ---
         function updateUI() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getIndiaDate();
     
     // 1. Calculate Today's Progress
     const todayMins = db.logs
@@ -562,24 +565,21 @@
     document.getElementById('stat-streak').innerText = db.streak + " Days";
 
     // 4. Heatmap Logic (Updated for 5-hour requirement & dynamic range)
+    // 4. HEATMAP (Last 120 Days, India Time, 5-Hour Rule)
     const hm = document.getElementById('heatmap');
     hm.innerHTML = '';
-    
-    // Show last 100 days (or increase to 365 for a full year view)
     const daysToShow = 120; 
     for(let i = 0; i < daysToShow; i++) {
         const dot = document.createElement('div');
         dot.className = 'heat-dot';
         
+        // Calculate date for each dot in IST
         const d = new Date();
         d.setDate(d.getDate() - (daysToShow - 1 - i));
-        const dStr = d.toISOString().split('T')[0];
+        const dStr = d.toLocaleDateString('en-CA', {timeZone: 'Asia/Kolkata'});
         
-        const dayTotal = db.logs
-            .filter(l => l.date === dStr)
-            .reduce((a, b) => a + b.mins, 0);
+        const dayTotal = dailyTotals[dStr] || 0;
 
-        // Mark green only if >= 5 hours (300 mins)
         if(dayTotal >= 300) {
             dot.classList.add('heat-fill');
             dot.title = `${dStr}: ${Math.floor(dayTotal/60)}h completed`;
