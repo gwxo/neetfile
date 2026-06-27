@@ -345,10 +345,9 @@
         };
 
         const save = () => {
-            localStorage.setItem('dr_prashant_pro_db', JSON.stringify(db));
-            updateUI();
-        };
-
+    localStorage.setItem('dr_prashant_pro_db', JSON.stringify(db));
+    updateUI(); // This triggers the streak recalculation
+};
         // --- NAVIGATION ---
         function nav(view, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -458,60 +457,100 @@
 
         // --- UI REFRESH ---
         function updateUI() {
-            const today = new Date().toISOString().split('T')[0];
-            const todayMins = db.logs.filter(l => l.date === today).reduce((a, b) => a + b.mins, 0);
-            const totalMins = db.logs.reduce((a, b) => a + b.mins, 0);
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 1. Calculate Today's Progress
+    const todayMins = db.logs
+        .filter(l => l.date === today)
+        .reduce((a, b) => a + b.mins, 0);
+    
+    // 2. Calculate Total Progress
+    const totalMins = db.logs.reduce((a, b) => a + b.mins, 0);
 
-            // Dashboard
-            document.getElementById('stat-today').innerText = `${Math.floor(todayMins / 60)}h ${todayMins % 60}m`;
-            document.getElementById('stat-total').innerText = (totalMins / 60).toFixed(1) + "h";
-            
-            // Streak Logic
-            if(db.lastActive !== today && todayMins > 0) {
-                db.streak++;
-                db.lastActive = today;
-            }
-            document.getElementById('stat-streak').innerText = db.streak + " Days";
+    // 3. Advanced Streak Logic (5-hour threshold)
+    const dailyTotals = {};
+    db.logs.forEach(log => {
+        dailyTotals[log.date] = (dailyTotals[log.date] || 0) + log.mins;
+    });
 
-            // Heatmap
-            const hm = document.getElementById('heatmap');
-            hm.innerHTML = '';
-            for(let i=0; i<91; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'heat-dot';
-                const d = new Date(); d.setDate(d.getDate() - (90 - i));
-                const dStr = d.toISOString().split('T')[0];
-                if(db.logs.some(l => l.date === dStr)) dot.classList.add('heat-fill');
-                hm.appendChild(dot);
-            }
+    let currentStreak = 0;
+    let checkDate = new Date(); // Start from today
+    
+    // If today hasn't hit 5hrs yet, check if yesterday had a streak to maintain
+    let tempDateStr = checkDate.toISOString().split('T')[0];
+    if ((dailyTotals[tempDateStr] || 0) < 300) {
+        checkDate.setDate(checkDate.getDate() - 1); // Start checking from yesterday
+    }
 
-            // History Logs
-            document.getElementById('log-list').innerHTML = db.logs.slice().reverse().map(l => `
-                <div class="item-row">
-                    <div>
-                        <div style="font-weight:800; font-size: 0.9rem;">${l.label}</div>
-                        <div style="font-size:0.7rem; color:var(--text-dim)">${l.date} • ${l.timestamp}</div>
-                    </div>
-                    <div style="color:var(--primary); font-weight:800;">+${l.mins}m</div>
-                </div>
-            `).join('');
-
-            // Tasks
-            document.getElementById('task-list').innerHTML = db.tasks.map(t => `
-                <div class="item-row" style="opacity: ${t.done ? 0.4 : 1}">
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="tasks.toggle(${t.id})">
-                        <span style="${t.done ? 'text-decoration:line-through' : ''}">${t.text}</span>
-                    </div>
-                    <button onclick="tasks.del(${t.id})" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.2rem;">&times;</button>
-                </div>
-            `).join('');
-
-            // Hub
-            document.getElementById('hub-phy').innerText = db.prep.phy + "%";
-            document.getElementById('hub-chem').innerText = db.prep.chem + "%";
-            document.getElementById('hub-bio').innerText = db.prep.bio + "%";
+    while (true) {
+        const dStr = checkDate.toISOString().split('T')[0];
+        if ((dailyTotals[dStr] || 0) >= 300) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break; // Gap found or threshold not met
         }
+    }
+    db.streak = currentStreak;
+
+    // Update Dashboard Display
+    document.getElementById('stat-today').innerText = `${Math.floor(todayMins / 60)}h ${Math.round(todayMins % 60)}m`;
+    document.getElementById('stat-total').innerText = (totalMins / 60).toFixed(1) + "h";
+    document.getElementById('stat-streak').innerText = db.streak + " Days";
+
+    // 4. Heatmap Logic (Updated for 5-hour requirement & dynamic range)
+    const hm = document.getElementById('heatmap');
+    hm.innerHTML = '';
+    
+    // Show last 100 days (or increase to 365 for a full year view)
+    const daysToShow = 120; 
+    for(let i = 0; i < daysToShow; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'heat-dot';
+        
+        const d = new Date();
+        d.setDate(d.getDate() - (daysToShow - 1 - i));
+        const dStr = d.toISOString().split('T')[0];
+        
+        const dayTotal = db.logs
+            .filter(l => l.date === dStr)
+            .reduce((a, b) => a + b.mins, 0);
+
+        // Mark green only if >= 5 hours (300 mins)
+        if(dayTotal >= 300) {
+            dot.classList.add('heat-fill');
+            dot.title = `${dStr}: ${Math.floor(dayTotal/60)}h completed`;
+        }
+        hm.appendChild(dot);
+    }
+
+    // 5. Update History Logs
+    document.getElementById('log-list').innerHTML = db.logs.slice().reverse().slice(0, 10).map(l => `
+        <div class="item-row">
+            <div>
+                <div style="font-weight:800; font-size: 0.9rem;">${l.label}</div>
+                <div style="font-size:0.7rem; color:var(--text-dim)">${l.date} • ${l.timestamp}</div>
+            </div>
+            <div style="color:var(--primary); font-weight:800;">+${l.mins}m</div>
+        </div>
+    `).join('');
+
+    // 6. Update Tasks
+    document.getElementById('task-list').innerHTML = db.tasks.map(t => `
+        <div class="item-row" style="opacity: ${t.done ? 0.4 : 1}">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="tasks.toggle(${t.id})">
+                <span style="${t.done ? 'text-decoration:line-through' : ''}">${t.text}</span>
+            </div>
+            <button onclick="tasks.del(${t.id})" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.2rem;">&times;</button>
+        </div>
+    `).join('');
+
+    // 7. Prep Hub
+    document.getElementById('hub-phy').innerText = db.prep.phy + "%";
+    document.getElementById('hub-chem').innerText = db.prep.chem + "%";
+    document.getElementById('hub-bio').innerText = db.prep.bio + "%";
+}
 
         // --- COUNTDOWN ---
         function countdown() {
