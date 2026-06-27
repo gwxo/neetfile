@@ -168,6 +168,63 @@
             width: 100%; background: var(--surface); border: 1px solid var(--border);
             padding: 16px; border-radius: 16px; color: #fff; font-family: inherit; margin-bottom: 15px;
         }
+
+        /* Enhanced Task UI */
+.task-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.task-input-group input {
+    margin-bottom: 0 !important; /* Remove bottom margin to align with button */
+    flex: 1;
+}
+
+.btn-add-task {
+    background: var(--primary);
+    color: #000;
+    border: none;
+    padding: 0 24px;
+    border-radius: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition);
+    height: 54px; /* Matches input height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-add-task:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+.task-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    word-break: break-word; /* Prevents long text from breaking layout */
+    line-height: 1.4;
+}
+
+/* Checkbox Styling */
+.task-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+@media (max-width: 480px) {
+    .task-input-group {
+        gap: 6px;
+    }
+    .btn-add-task {
+        padding: 0 16px;
+        font-size: 0.8rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -284,12 +341,18 @@
             </section>
 
             <!-- VIEW: TASKS -->
-            <section id="view-tasks" class="page hidden">
-                <div class="card">
-                    <input type="text" id="task-in" placeholder="Next clinical objective..." onkeypress="if(event.key==='Enter') tasks.add()">
-                    <div id="task-list" style="margin-top: 10px;"></div>
-                </div>
-            </section>
+            <!-- VIEW: TASKS -->
+<section id="view-tasks" class="page hidden">
+    <div class="card">
+        <span class="card-label">Clinical Objectives</span>
+        <div class="task-input-group">
+            <input type="text" id="task-in" placeholder="Add next clinical objective..." 
+                   onkeypress="if(event.key==='Enter') tasks.add()">
+            <button class="btn-add-task" onclick="tasks.add()">ADD</button>
+        </div>
+        <div id="task-list"></div>
+    </div>
+</section>
 
             <!-- VIEW: HUB -->
             <section id="view-hub" class="page hidden">
@@ -536,15 +599,18 @@
     `).join('');
 
     // 6. Update Tasks
-    document.getElementById('task-list').innerHTML = db.tasks.map(t => `
-        <div class="item-row" style="opacity: ${t.done ? 0.4 : 1}">
-            <div style="display:flex; gap:12px; align-items:center;">
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="tasks.toggle(${t.id})">
-                <span style="${t.done ? 'text-decoration:line-through' : ''}">${t.text}</span>
-            </div>
-            <button onclick="tasks.del(${t.id})" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.2rem;">&times;</button>
+    // Tasks (Replace this specific part inside updateUI)
+document.getElementById('task-list').innerHTML = db.tasks.map(t => `
+    <div class="item-row" style="opacity: ${t.done ? 0.5 : 1}; align-items: flex-start; gap: 15px;">
+        <div style="display:flex; gap:14px; align-items: flex-start; flex: 1;">
+            <input type="checkbox" class="task-checkbox" ${t.done ? 'checked' : ''} onchange="tasks.toggle(${t.id})" style="margin-top: 2px;">
+            <span class="task-text" style="${t.done ? 'text-decoration:line-through; color:var(--text-dim)' : ''}">
+                ${t.text}
+            </span>
         </div>
-    `).join('');
+        <button onclick="tasks.del(${t.id})" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.5rem; line-height: 1; padding: 0 5px;">&times;</button>
+    </div>
+`).join('');
 
     // 7. Prep Hub
     document.getElementById('hub-phy').innerText = db.prep.phy + "%";
